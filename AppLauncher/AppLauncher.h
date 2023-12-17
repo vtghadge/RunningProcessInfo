@@ -2,7 +2,7 @@
 
 //#define SOURCE_APP_NAME	L"HelloWorld.exe"
 #define SOURCE_APP_NAME	L"RunningProcessList.exe"
-#define TARGET_APP_NAME	L"C:\\Windows\\SysWOW64\\svchost.exe"
+#define TARGET_APP_NAME	L"svchost.exe"
 
 typedef enum _PROCESSINFOCLASS {
 	ProcessBasicInformation = 0,
@@ -53,7 +53,6 @@ private:
 
 	bool ExecFile();
 	bool GetProcessBaseAddress();
-	bool GetProcessBaseAddressEx();
 	bool ReadSourceFile();
 	bool RunPE();
 	bool RunPE32();
@@ -78,14 +77,4 @@ private:
 	PFN_NTUNMAPVIEWOFSECTION m_pfnNtUnmapViewOfSection;
 };
 
-bool
-ExecFile(
-	const TCHAR* pcszExePath,
-	BOOLEAN bWaitForCompletion,
-	BOOLEAN bShowWindow,
-	DWORD* pdwError
-);
-
 bool GetWorkingDirPathW(std::wstring& folderPath, bool bIncludeLastBackslash);
-
-bool ReadPEB(HANDLE processHandle, void* pebVirtualAddress, PEB_NT& peb);

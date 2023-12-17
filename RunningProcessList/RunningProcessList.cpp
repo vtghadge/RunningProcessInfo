@@ -8,7 +8,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
-
 	ProcessManager ProcManagerObj;
 
 	ProcManagerObj.StartWorkerThread();
@@ -23,6 +22,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 ProcessManager::ProcessManager()
 {
 	m_hThreadStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+	GetWorkingDirPathW(m_configFilePath, true);
+	m_configFilePath += FILE_NAME_CONFIG_W;
 }
 
 ProcessManager::~ProcessManager()
@@ -41,6 +43,13 @@ ProcessManager::~ProcessManager()
 
 bool ProcessManager::StartWorkerThread()
 {
+	bool boRet = QueryURLInfo();
+	if (false == boRet)
+	{
+		wprintf(L"\n StartWorkerThread: QueryURLInfo failed with Error(%u)", GetLastError());
+		return false;
+	}
+
 	HANDLE hThread = CreateThread(NULL, 0, this->WorkerThread, this, 0, NULL);
 	if (NULL == hThread)
 	{
@@ -49,6 +58,7 @@ bool ProcessManager::StartWorkerThread()
 	}
 
 	WaitForSingleObject(hThread, INFINITE);
+	CloseHandle(hThread);
 
 	return true;
 }
@@ -265,6 +275,25 @@ bool ProcessManager::SendProcessEventToServer(std::string URL, std::string jsonD
 	return true;
 }
 
+bool ProcessManager::QueryURLInfo()
+{
+	int iRet = _waccess_s(m_configFilePath.c_str(), 0);
+	if (0 != iRet)
+	{
+		wprintf(L"QueryURLInfo: Config file (%s) is not present.", m_configFilePath.c_str());
+		return false;
+	}
+
+	bool boRet = GetPrivateProfileStringExW(RUNINNG_PROCESS_SECTION_NAME, RUNINNG_PROCESS_KEY_NAME_SERVER_URL, m_configFilePath, m_serverUrl);
+	if (false == boRet)
+	{
+		wprintf(L"ParseZoneIdentifier: GetPrivateProfileStringExW failed with error (%u) for key(%s).", GetLastError(), RUNINNG_PROCESS_KEY_NAME_SERVER_URL);
+		return false;
+	}
+
+	return true;
+}
+
 bool ProcessManager::GetRunningProcessList()
 {
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -274,7 +303,6 @@ bool ProcessManager::GetRunningProcessList()
         return false;
     }
 
-	bool boRet;
 	std::wstring processPath;
 	PROCESSENTRY32 processEntry;
     processEntry.dwSize = sizeof(PROCESSENTRY32);
@@ -283,14 +311,8 @@ bool ProcessManager::GetRunningProcessList()
     {
         do
         {
-			boRet = GetProcessPathFromPid(processEntry.th32ProcessID, processPath);
-			if (false == boRet)
-			{
-				processPath = processEntry.szExeFile;
-			}
-
-            wprintf(L"\n Process ID: %u \t Process Name(%s)", processEntry.th32ProcessID, processPath.c_str());
-
+			processPath = processEntry.szExeFile;
+            //wprintf(L"\n Process ID: %u \t Process Name(%s)", processEntry.th32ProcessID, processPath.c_str());
 			m_runningProcessList.push_back(std::make_shared<ProcessInfo>(processEntry.th32ProcessID, processPath));
 
         } while (Process32Next(hSnapshot, &processEntry) == TRUE);
@@ -359,5 +381,71 @@ std::string ConvertWstringToString(std::wstring& wstring)
 	}
 
 	return convertedString;
+}
+
+bool GetWorkingDirPathW(std::wstring& folderPath, bool bIncludeLastBackslash)
+{
+	DWORD dwLen;
+	wchar_t* pwszTemp = NULL;
+	WCHAR wszPath[MAX_PATH];
+
+	dwLen = GetModuleFileNameW(GetModuleHandle(nullptr), wszPath, ARRAYSIZE(wszPath));
+	if (0 == dwLen)
+	{
+		return false;
+	}
+	if (ERROR_INSUFFICIENT_BUFFER == GetLastError())
+	{
+		return false;
+	}
+
+	pwszTemp = wcsrchr(wszPath, L'\\');
+	if (NULL == pwszTemp)
+	{
+		return false;
+	}
+
+	if (true == bIncludeLastBackslash)
+	{
+		pwszTemp++;
+		*pwszTemp = L'\0';
+	}
+	else
+	{
+		*pwszTemp = L'\0';
+	}
+
+	folderPath = wszPath;
+
+	return true;
+}
+
+bool GetPrivateProfileStringExW(const std::wstring sectionName, const std::wstring keyName, const std::wstring filePath, std::wstring& valueBuffer, size_t bufferSize)
+{
+	bool bRes = false;
+	std::vector<WCHAR> buffer(bufferSize);
+
+	for (size_t i = 1; i <= 3; i++)
+	{
+		int iRet = GetPrivateProfileStringW(sectionName.c_str(), keyName.c_str(), NULL, &buffer[0], buffer.capacity(), filePath.c_str());
+		if (0 == iRet)
+		{
+			wprintf(L"GetPrivateProfileStringW failed with error (%u) for key(%s).", GetLastError(), keyName.c_str());
+			return false;
+		}
+
+		if (iRet == (buffer.capacity() - 1))
+		{
+			wprintf(L"Buffer overflow condition for key (%s) from stream(%s).", keyName.c_str(), filePath.c_str());
+			buffer.resize(2 * buffer.capacity());
+			continue;
+		}
+
+		bRes = true;
+		valueBuffer = &buffer[0];
+		break;
+	}
+
+	return bRes;
 }
 
