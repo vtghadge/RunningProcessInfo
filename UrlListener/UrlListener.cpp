@@ -16,6 +16,12 @@ int main()
 		return 0;
 	}
 
+	/*if (SetConsoleCtrlHandler((PHANDLER_ROUTINE)URLListener::GetInstance()->CtrlCHandler, TRUE))
+	{
+		Sleep(INFINITE);
+		wprintf(L"Main thread out of sleep.");
+	}*/
+
 	URLListener::Release();
 	return 0;
 }
@@ -30,17 +36,12 @@ URLListener::URLListener()
 
 URLListener* URLListener::GetInstance()
 {
-    if (nullptr == s_pUrlListener.get())
-    {
-        s_pUrlListener = std::make_unique<URLListener>();
-    }
-
     return s_pUrlListener.get();
 }
 
 void URLListener::Create()
 {
-    if (nullptr == s_pUrlListener.get())
+    if (nullptr == s_pUrlListener)
     {
         s_pUrlListener.reset(new URLListener());
     }
@@ -48,7 +49,21 @@ void URLListener::Create()
 
 void URLListener::Release()
 {
-    s_pUrlListener.reset(nullptr);
+	if (nullptr != s_pUrlListener)
+	{
+		s_pUrlListener.reset(nullptr);
+	}
+}
+
+BOOL __stdcall URLListener::CtrlCHandler(DWORD fdwCtrlType)
+{
+	if (fdwCtrlType == CTRL_C_EVENT || fdwCtrlType == CTRL_CLOSE_EVENT)
+	{
+		wprintf(L"CtrlCHandler: Quit console window event received\n");
+		URLListener::GetInstance()->SetStopEvent();
+	}
+
+	return FALSE;
 }
 
 URLListener::~URLListener()
@@ -68,15 +83,15 @@ bool URLListener::StartURLListenerThread()
 		return false;
 	}
 
-    m_hThread = CreateThread(NULL, 0, this->URLListenerThread, this, 0, NULL);
-    if (NULL == m_hThread)
+    HANDLE hThread = CreateThread(NULL, 0, this->URLListenerThread, this, 0, NULL);
+    if (NULL == hThread)
     {
         wprintf(L"\n StartURLListenerThread: CreateThread failed with Error(%u)", GetLastError());
         return false;
     }
 
-    WaitForSingleObject(m_hThread, INFINITE);
-    CloseHandle(m_hThread);
+    WaitForSingleObject(hThread, INFINITE);
+    CloseHandle(hThread);
 
     return true;
 }
@@ -109,6 +124,7 @@ bool URLListener::URLListenerThreadImplementation()
             break;
         }
 
+		wprintf(L"\n Waiting for new request...");
         dwWaitResult = WaitForSingleObject(m_hThreadStopEvent, dwWaitTime);
         if (WAIT_OBJECT_0 == dwWaitResult)
         {
@@ -143,7 +159,8 @@ bool URLListener::GetRunningProcessList()
 	}
 
 	m_latestRequestId = latestRequestId;
-	wprintf(L"\n BuildRequestURL: Found new request on server with Id(%S).", latestRequestId);
+
+	wprintf(L"\n BuildRequestURL: Found new request on server with Id(%S).", latestRequestId.c_str());
 
 	std::string jsonProcInfo;
 	boRet = GetServerResponse(requestUrl.c_str(), jsonProcInfo);
@@ -301,6 +318,11 @@ bool URLListener::GetServerResponse(const char* URL, std::string& Response)
 	}
 
 	return true;
+}
+
+void URLListener::SetStopEvent()
+{
+	SetEvent(m_hThreadStopEvent);
 }
 
 bool URLListener::QueryURLInfo()

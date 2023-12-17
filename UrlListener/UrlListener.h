@@ -17,6 +17,11 @@
 
 class URLListener
 {
+private:
+
+	URLListener();
+	URLListener& operator = (const URLListener&) = delete;
+
 public:
 
 	struct ProcessInfo
@@ -30,7 +35,8 @@ public:
 	static void Create();
 	static void Release();
 
-	URLListener();
+	static BOOL WINAPI CtrlCHandler(DWORD fdwCtrlType);
+
 	~URLListener();
 
 	typedef std::list<std::shared_ptr<ProcessInfo>> RunningProcessList;
@@ -41,13 +47,13 @@ public:
 
 private:
 
+	void SetStopEvent();
 	bool QueryURLInfo();
 	bool Deserialize(std::string& jsonProcInfo);
 	bool BuildRequestURL(std::string &latestRequestIdResponse, std::string& latestRequestId, std::string &requestURL);
 	bool GetServerResponse(const char* URL, std::string& Response);
 
 private:
-	HANDLE m_hThread;
 	std::string m_latestRequestId;
 	std::string m_apiId;
 	std::string m_tokenUrl;

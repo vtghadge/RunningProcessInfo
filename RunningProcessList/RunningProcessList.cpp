@@ -116,7 +116,7 @@ bool ProcessManager::SendRunningProcessList()
 		return boRet;
 	}
 
-	boRet = SendProcessEventToServer(SERVER_URL, processListBuffer);
+	boRet = SendProcessEventToServer(m_serverUrl.c_str(), processListBuffer);
 	if (false == boRet)
 	{
 		return boRet;
@@ -156,7 +156,7 @@ bool ProcessManager::Serialize(std::string& serializeBuffer)
 	return true;
 }
 
-bool ProcessManager::SendProcessEventToServer(std::string URL, std::string jsonData)
+bool ProcessManager::SendProcessEventToServer(const char* URL, std::string jsonData)
 {
 	CURLcode CurlError;
 	CURL* pCurlHandle = NULL;
@@ -198,7 +198,7 @@ bool ProcessManager::SendProcessEventToServer(std::string URL, std::string jsonD
 		return false;
 	}
 
-	if (0 != curl_easy_setopt(pCurlHandle, CURLOPT_URL, URL.c_str()))
+	if (0 != curl_easy_setopt(pCurlHandle, CURLOPT_URL, URL))
 	{
 		curl_easy_cleanup(pCurlHandle);
 		curl_global_cleanup();
@@ -284,18 +284,25 @@ bool ProcessManager::QueryURLInfo()
 		return false;
 	}
 
-	bool boRet = GetPrivateProfileStringExW(RUNINNG_PROCESS_SECTION_NAME, RUNINNG_PROCESS_KEY_NAME_SERVER_URL, m_configFilePath, m_serverUrl);
+	std::wstring tempStr;
+	bool boRet = GetPrivateProfileStringExW(RUNINNG_PROCESS_SECTION_NAME, RUNINNG_PROCESS_KEY_NAME_SERVER_URL, m_configFilePath, tempStr);
 	if (false == boRet)
 	{
 		wprintf(L"ParseZoneIdentifier: GetPrivateProfileStringExW failed with error (%u) for key(%s).", GetLastError(), RUNINNG_PROCESS_KEY_NAME_SERVER_URL);
 		return false;
 	}
+	m_serverUrl = ConvertWstringToString(tempStr);
 
 	return true;
 }
 
 bool ProcessManager::GetRunningProcessList()
 {
+	if (!m_runningProcessList.empty())
+	{
+		m_runningProcessList.clear();
+	}
+
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
     {
