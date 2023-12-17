@@ -144,6 +144,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AppLauncher.cpp" />
+    <ClCompile Include="PE.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AppLauncher.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="PE.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
