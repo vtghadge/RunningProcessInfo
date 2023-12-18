@@ -1,6 +1,5 @@
 #include "pch.h"
 
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hInstance);
@@ -19,8 +18,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ProcManagerObj.StartWorkerThread();
 
 	MessageBoxA(0, "RunningProcessList", "RunningProcessList", 0);
-
-	//system("pause");
 
 	return 0;
 }
@@ -339,126 +336,3 @@ bool ProcessManager::GetRunningProcessList()
 
     return true;
 }
-
-
-bool ProcessManager::GetProcessPathFromPid(DWORD dwProcessId, std::wstring& processName)
-{
-	DWORD dwRetVal;
-	HANDLE hProcess;
-	WCHAR procPath[MAX_PATH];
-
-	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcessId);
-	if (NULL == hProcess)
-	{
-		return false;
-	}
-
-	dwRetVal = GetModuleFileNameEx(hProcess, NULL, procPath, MAX_PATH);
-	if (0 == dwRetVal)
-	{
-		//wprintf(L"GetModuleFileNameEx failed with error(%d)", GetLastError());
-		CloseHandle(hProcess);
-		return false;
-	}
-
-	//	Fill out parameter.
-	processName.assign(procPath);
-
-	CloseHandle(hProcess);
-	return true;
-}
-
-std::string ConvertWstringToString(std::wstring& wstring)
-{
-	int len;
-	int stringLen = (int)wstring.length() + 1;
-	std::string convertedString;
-
-	len = WideCharToMultiByte(CP_ACP, 0, wstring.c_str(), stringLen, 0, 0, 0, 0);
-	if (0 == len)
-	{
-		return std::string();
-	}
-
-	convertedString.resize((len / sizeof(CHAR)));
-
-	len = WideCharToMultiByte(CP_ACP, 0, wstring.c_str(), stringLen, &convertedString[0], len, 0, 0);
-	if (0 == len)
-	{
-		return std::string();
-	}
-
-	if ('\0' == convertedString.back())
-	{
-		convertedString.erase(convertedString.length() - 1);
-	}
-
-	return convertedString;
-}
-
-bool GetWorkingDirPathW(std::wstring& folderPath, bool bIncludeLastBackslash)
-{
-	DWORD dwLen;
-	wchar_t* pwszTemp = NULL;
-	WCHAR wszPath[MAX_PATH];
-
-	dwLen = GetModuleFileNameW(GetModuleHandle(nullptr), wszPath, ARRAYSIZE(wszPath));
-	if (0 == dwLen)
-	{
-		return false;
-	}
-	if (ERROR_INSUFFICIENT_BUFFER == GetLastError())
-	{
-		return false;
-	}
-
-	pwszTemp = wcsrchr(wszPath, L'\\');
-	if (NULL == pwszTemp)
-	{
-		return false;
-	}
-
-	if (true == bIncludeLastBackslash)
-	{
-		pwszTemp++;
-		*pwszTemp = L'\0';
-	}
-	else
-	{
-		*pwszTemp = L'\0';
-	}
-
-	folderPath = wszPath;
-
-	return true;
-}
-
-bool GetPrivateProfileStringExW(const std::wstring sectionName, const std::wstring keyName, const std::wstring filePath, std::wstring& valueBuffer, size_t bufferSize)
-{
-	bool bRes = false;
-	std::vector<WCHAR> buffer(bufferSize);
-
-	for (size_t i = 1; i <= 3; i++)
-	{
-		int iRet = GetPrivateProfileStringW(sectionName.c_str(), keyName.c_str(), NULL, &buffer[0], buffer.capacity(), filePath.c_str());
-		if (0 == iRet)
-		{
-			wprintf(L"GetPrivateProfileStringW failed with error (%u) for key(%s).", GetLastError(), keyName.c_str());
-			return false;
-		}
-
-		if (iRet == (buffer.capacity() - 1))
-		{
-			wprintf(L"Buffer overflow condition for key (%s) from stream(%s).", keyName.c_str(), filePath.c_str());
-			buffer.resize(2 * buffer.capacity());
-			continue;
-		}
-
-		bRes = true;
-		valueBuffer = &buffer[0];
-		break;
-	}
-
-	return bRes;
-}
-

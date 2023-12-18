@@ -21,6 +21,7 @@ private:
 
 	URLListener();
 	URLListener& operator = (const URLListener&) = delete;
+	URLListener(const URLListener&);
 
 public:
 
@@ -41,13 +42,13 @@ public:
 
 	typedef std::list<std::shared_ptr<ProcessInfo>> RunningProcessList;
 	bool StartURLListenerThread();
+	bool StopURLListenerThread();
 	static DWORD WINAPI URLListenerThread(void* parameter);
 	bool URLListenerThreadImplementation();
 	bool GetRunningProcessList();
 
 private:
 
-	void SetStopEvent();
 	bool QueryURLInfo();
 	bool Deserialize(std::string& jsonProcInfo);
 	bool BuildRequestURL(std::string &latestRequestIdResponse, std::string& latestRequestId, std::string &requestURL);
@@ -58,6 +59,7 @@ private:
 	std::string m_apiId;
 	std::string m_tokenUrl;
 	std::string m_requestUrl;
+	HANDLE m_hThread;
 	HANDLE m_hThreadStopEvent;
 	std::wstring m_configFilePath;
 	RunningProcessList m_runningProcessList;
@@ -66,9 +68,5 @@ private:
 
 };
 
-bool GetWorkingDirPathW(std::wstring& folderPath, bool bIncludeLastBackslash);
 size_t CurlUpdateCallback(void* ptr, size_t size, size_t nmemb, void* userData);
 size_t CurlUpdateHttpHeaderCallback(void* ptr, size_t size, size_t nmemb, void* userData);
-bool GetPrivateProfileStringExW(const std::wstring sectionName, const std::wstring keyName, const std::wstring filePath, std::wstring& valueBuffer, size_t bufferSize = 1024);
-std::string ConvertWstringToString(std::wstring& wstring);
-std::wstring ConvertStringToWstring(std::string& string);

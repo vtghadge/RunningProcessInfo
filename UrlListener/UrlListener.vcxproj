@@ -151,9 +151,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\common.cpp" />
     <ClCompile Include="UrlListener.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\common.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="UrlListener.h" />
   </ItemGroup>

@@ -4,3 +4,6 @@
 #include "ProcessTypes.h"
 #include "AppLauncher.h"
 #include "PE.h"
+
+#include"..\common\common.h"
+

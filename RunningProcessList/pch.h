@@ -7,8 +7,9 @@
 #include <vector>
 #include"RunningProcessList.h"
 
-#include "..\rapidjson\rapidjson.h"
-#include "..\rapidjson\document.h"
-#include "..\rapidjson\stringbuffer.h"
-#include "..\rapidjson\prettywriter.h"
-#include "..\curl\curl.h"
+#include"..\common\common.h"
+#include "..\common\rapidjson\rapidjson.h"
+#include "..\common\rapidjson\document.h"
+#include "..\common\rapidjson\stringbuffer.h"
+#include "..\common\rapidjson\prettywriter.h"
+#include "..\common\curl\curl.h"

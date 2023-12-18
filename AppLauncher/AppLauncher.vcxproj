@@ -143,10 +143,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\common.cpp" />
     <ClCompile Include="AppLauncher.cpp" />
     <ClCompile Include="PE.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\common.h" />
     <ClInclude Include="AppLauncher.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PE.h" />

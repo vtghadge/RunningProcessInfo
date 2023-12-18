@@ -78,5 +78,3 @@ private:
 	PFN_NTQUERYINFORMATIONPROCESS m_pfnQueryInformationProcess;
 	PFN_NTUNMAPVIEWOFSECTION m_pfnNtUnmapViewOfSection;
 };
-
-bool GetWorkingDirPathW(std::wstring& folderPath, bool bIncludeLastBackslash);

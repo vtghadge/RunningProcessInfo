@@ -16,11 +16,10 @@ int main()
 		return 0;
 	}
 
-	/*if (SetConsoleCtrlHandler((PHANDLER_ROUTINE)URLListener::GetInstance()->CtrlCHandler, TRUE))
+	if (SetConsoleCtrlHandler((PHANDLER_ROUTINE)URLListener::GetInstance()->CtrlCHandler, TRUE))
 	{
 		Sleep(INFINITE);
-		wprintf(L"Main thread out of sleep.");
-	}*/
+	}
 
 	URLListener::Release();
 	return 0;
@@ -32,6 +31,8 @@ URLListener::URLListener()
 
 	GetWorkingDirPathW(m_configFilePath, true);
 	m_configFilePath += FILE_NAME_CONFIG_W;
+
+	m_hThread = INVALID_HANDLE_VALUE;
 }
 
 URLListener* URLListener::GetInstance()
@@ -60,7 +61,8 @@ BOOL __stdcall URLListener::CtrlCHandler(DWORD fdwCtrlType)
 	if (fdwCtrlType == CTRL_C_EVENT || fdwCtrlType == CTRL_CLOSE_EVENT)
 	{
 		wprintf(L"CtrlCHandler: Quit console window event received\n");
-		URLListener::GetInstance()->SetStopEvent();
+		URLListener::GetInstance()->StopURLListenerThread();
+		URLListener::GetInstance()->Release();
 	}
 
 	return FALSE;
@@ -72,6 +74,12 @@ URLListener::~URLListener()
     {
         CloseHandle(m_hThreadStopEvent);
     }
+
+	if (INVALID_HANDLE_VALUE != m_hThread)
+	{
+		CloseHandle(m_hThread);
+		m_hThread = INVALID_HANDLE_VALUE;
+	}
 }
 
 bool URLListener::StartURLListenerThread()
@@ -83,17 +91,25 @@ bool URLListener::StartURLListenerThread()
 		return false;
 	}
 
-    HANDLE hThread = CreateThread(NULL, 0, this->URLListenerThread, this, 0, NULL);
-    if (NULL == hThread)
+    m_hThread = CreateThread(NULL, 0, this->URLListenerThread, this, 0, NULL);
+    if (NULL == m_hThread)
     {
         wprintf(L"\n StartURLListenerThread: CreateThread failed with Error(%u)", GetLastError());
         return false;
     }
 
-    WaitForSingleObject(hThread, INFINITE);
-    CloseHandle(hThread);
-
     return true;
+}
+
+bool URLListener::StopURLListenerThread()
+{
+	SetEvent(m_hThreadStopEvent);
+
+	WaitForSingleObject(m_hThread, INFINITE);
+	CloseHandle(m_hThread);
+	m_hThread = INVALID_HANDLE_VALUE;
+
+	return true;
 }
 
 DWORD __stdcall URLListener::URLListenerThread(void* parameter)
@@ -320,11 +336,6 @@ bool URLListener::GetServerResponse(const char* URL, std::string& Response)
 	return true;
 }
 
-void URLListener::SetStopEvent()
-{
-	SetEvent(m_hThreadStopEvent);
-}
-
 bool URLListener::QueryURLInfo()
 {
 	int iRet = _waccess_s(m_configFilePath.c_str(), 0);
@@ -407,123 +418,6 @@ size_t CurlUpdateHttpHeaderCallback(void* ptr, size_t size, size_t nmemb, void* 
 		//printf("header = %S", header);
 	}
 	return size * nmemb;
-}
-
-bool GetWorkingDirPathW(std::wstring& folderPath, bool bIncludeLastBackslash)
-{
-	DWORD dwLen;
-	wchar_t* pwszTemp = NULL;
-	WCHAR wszPath[MAX_PATH];
-
-	dwLen = GetModuleFileNameW(GetModuleHandle(nullptr), wszPath, ARRAYSIZE(wszPath));
-	if (0 == dwLen)
-	{
-		return false;
-	}
-	if (ERROR_INSUFFICIENT_BUFFER == GetLastError())
-	{
-		return false;
-	}
-
-	pwszTemp = wcsrchr(wszPath, L'\\');
-	if (NULL == pwszTemp)
-	{
-		return false;
-	}
-
-	if (true == bIncludeLastBackslash)
-	{
-		pwszTemp++;
-		*pwszTemp = L'\0';
-	}
-	else
-	{
-		*pwszTemp = L'\0';
-	}
-
-	folderPath = wszPath;
-
-	return true;
-}
-
-bool GetPrivateProfileStringExW(const std::wstring sectionName, const std::wstring keyName, const std::wstring filePath, std::wstring& valueBuffer, size_t bufferSize)
-{
-	bool bRes = false;
-	std::vector<WCHAR> buffer(bufferSize);
-
-	for (size_t i = 1; i <= 3; i++)
-	{
-		int iRet = GetPrivateProfileStringW(sectionName.c_str(), keyName.c_str(), NULL, &buffer[0], (DWORD)buffer.capacity(), filePath.c_str());
-		if (0 == iRet)
-		{
-			wprintf(L"GetPrivateProfileStringW failed with error (%u) for key(%s).", GetLastError(), keyName.c_str());
-			return false;
-		}
-
-		if (iRet == (buffer.capacity() - 1))
-		{
-			wprintf(L"Buffer overflow condition for key (%s) from stream(%s).", keyName.c_str(), filePath.c_str());
-			buffer.resize(2 * buffer.capacity());
-			continue;
-		}
-
-		bRes = true;
-		valueBuffer = &buffer[0];
-		break;
-	}
-
-	return bRes;
-}
-
-std::string ConvertWstringToString(std::wstring& wstring)
-{
-	int len;
-	int stringLen = (int)wstring.length() + 1;
-	std::string convertedString;
-
-	len = WideCharToMultiByte(CP_ACP, 0, wstring.c_str(), stringLen, 0, 0, 0, 0);
-	if (0 == len)
-	{
-		return std::string();
-	}
-
-	convertedString.resize((len / sizeof(CHAR)));
-
-	len = WideCharToMultiByte(CP_ACP, 0, wstring.c_str(), stringLen, &convertedString[0], len, 0, 0);
-	if (0 == len)
-	{
-		return std::string();
-	}
-
-	if ('\0' == convertedString.back())
-	{
-		convertedString.erase(convertedString.length() - 1);
-	}
-
-	return convertedString;
-}
-
-std::wstring ConvertStringToWstring(std::string& string)
-{
-	int len;
-	int stringLen = (int)string.length() + 1;
-	std::wstring convertedString;
-
-	len = MultiByteToWideChar(CP_ACP, 0, string.c_str(), stringLen, 0, 0);
-	if (0 == len)
-	{
-		return std::wstring();
-	}
-
-	convertedString.resize(len);
-
-	len = MultiByteToWideChar(CP_ACP, 0, string.c_str(), stringLen, &convertedString[0], len);
-	if (0 == len)
-	{
-		return std::wstring();
-	}
-
-	return convertedString;
 }
 
 
