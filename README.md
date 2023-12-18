@@ -69,7 +69,8 @@ Usage:
 	-Monitor the URL https://webhook.site/#!/c2455784-3080-4ce9-a19b-16deb0051ea0 to check for the latest events.
 2. Launch UrlListener from another command prompt:
 	-Fetches and prints process info from the server.
-	-Terminate using Ctrl+C.	
+	-Terminate using Ctrl+C.
+3. Ensure that the config.ini file is located in the binary folder, check BinarySet folder.	
 	
 Testcases:
 ==========
