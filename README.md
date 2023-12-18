@@ -5,6 +5,23 @@ ReadMe.txt
 - **Author:** Vishal Ghadge
 - **Email:** vtghadge@gmail.com
 
+Problem Statement:
+==================
+
+1. Part1
+	- Create a C++ Windows 11 executable that launches another application, such as a
+svchost.exe or another long-running non-UI application
+	- Modify the newly launched process so that it's only job is to periodically (say once every
+minute) obtain a list of running processes and send it to a specific URL.
+2. Part2:
+	- Implement a URL listener that receives data from the app above.
+	
+Solution:
+=========
+I chose process hollowing for its ability to inject code into a separate process,
+enabling stealthy execution and evading detection.
+Alternatives such as DLL injection and API hooking exist, but process hollowing often provides better obfuscation and can be more difficult to detect.
+
 Build Environment:
 ==================
 
