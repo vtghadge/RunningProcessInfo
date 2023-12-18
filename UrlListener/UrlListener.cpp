@@ -70,6 +70,11 @@ BOOL __stdcall URLListener::CtrlCHandler(DWORD fdwCtrlType)
 
 URLListener::~URLListener()
 {
+	if (!m_runningProcessList.empty())
+	{
+		m_runningProcessList.clear();
+	}
+
     if (m_hThreadStopEvent)
     {
         CloseHandle(m_hThreadStopEvent);
@@ -381,6 +386,11 @@ bool URLListener::Deserialize(std::string& jsonProcInfo)
 	if (!document.IsArray())
 	{
 		return false;
+	}
+
+	if (!m_runningProcessList.empty())
+	{
+		m_runningProcessList.clear();
 	}
 
 	for (rapidjson::SizeType i = 0; i < document.Size(); i++)

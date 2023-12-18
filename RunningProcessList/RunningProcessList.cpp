@@ -17,7 +17,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ProcManagerObj.StartWorkerThread();
 
-	MessageBoxA(0, "RunningProcessList", "RunningProcessList", 0);
+	MessageBoxA(0, "Process hollowing failed.", "RunningProcessList", 0);
 
 	return 0;
 }
@@ -32,6 +32,11 @@ ProcessManager::ProcessManager(std::wstring modulePath)
 
 ProcessManager::~ProcessManager()
 {
+	if (!m_runningProcessList.empty())
+	{
+		m_runningProcessList.clear();
+	}
+
 	if (m_hThreadStopEvent)
 	{
 		CloseHandle(m_hThreadStopEvent);

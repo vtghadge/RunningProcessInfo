@@ -1,13 +1,9 @@
 #pragma once
 
-
-
 #define ONE_MINUTE	1000*60*1
 
 #define PROCESS_ID		"ProcessId"
 #define PROCESS_NAME	"ProcessName"
-#define SERVER_URL			"https://webhook.site/token/c2455784-3080-4ce9-a19b-16deb0051ea0/request/45ac2ace-7fcc-4713-9041-4a76702232e4/raw"
-#define API_ID				"c2455784-3080-4ce9-a19b-16deb0051ea0"
 
 #define FILE_NAME_CONFIG_W						L"Config.ini"
 #define URL_LISTENER_SECTION_NAME				L"Client"
