@@ -28,9 +28,10 @@ class ProcessHollowing {
 
 public:
 
-	ProcessHollowing(std::wstring sourceProcessPath, std::wstring destProcessPath)
+	ProcessHollowing(std::wstring sourceProcessPath, std::wstring sourceModulePath, std::wstring destProcessPath)
 	{
 		m_sourceProcessPath = sourceProcessPath;
+		m_sourceModulePath = sourceModulePath;
 		m_destProcessPath = destProcessPath;
 		m_pProcessInfo = nullptr;
 		m_pfnQueryInformationProcess = nullptr;
@@ -72,6 +73,7 @@ private:
 	bool m_boSource32BitProcess;
 	std::wstring m_destProcessPath;
 	std::wstring m_sourceProcessPath;
+	std::wstring m_sourceModulePath;
 	LPPROCESS_INFORMATION m_pProcessInfo;
 	PFN_NTQUERYINFORMATIONPROCESS m_pfnQueryInformationProcess;
 	PFN_NTUNMAPVIEWOFSECTION m_pfnNtUnmapViewOfSection;

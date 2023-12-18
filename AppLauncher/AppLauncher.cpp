@@ -13,7 +13,7 @@ int wmain()
 		return 0;
 	}
 
-	sourceAppPath = std::move(workingDir);
+	sourceAppPath = workingDir;
 	sourceAppPath += SOURCE_APP_NAME;
 
 	DWORD dwRetVal = GetWindowsDirectoryW(wszPath, MAX_PATH);
@@ -26,7 +26,7 @@ int wmain()
 	targetAppPath.append(L"\\System32\\");
 	targetAppPath.append(TARGET_APP_NAME);
 
-	ProcessHollowing ProcHollowing(sourceAppPath, targetAppPath);
+	ProcessHollowing ProcHollowing(sourceAppPath, workingDir, targetAppPath);
 
 	boRet = ProcHollowing.Init();
 	if (false == boRet)
@@ -299,7 +299,7 @@ bool ProcessHollowing::ExecFile()
 
 	boResult = CreateProcessW(
 		m_destProcessPath.c_str(),
-		NULL,
+		(LPWSTR)m_sourceModulePath.c_str(),
 		NULL,
 		NULL,
 		TRUE,
@@ -716,7 +716,11 @@ bool ProcessHollowing::RunPEReloc64()
 		return false;
 	}
 
-	ResumeThread(m_pProcessInfo->hThread);
+	DWORD dwRes = ResumeThread(m_pProcessInfo->hThread);
+	if (-1 == dwRes)
+	{
+		return false;
+	}
 
 	return true;
 }

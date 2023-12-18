@@ -8,7 +8,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nCmdShow);
 
-	ProcessManager ProcManagerObj;
+	std::wstring modulePath = GetCommandLineW();
+	if (modulePath.empty())
+	{
+		GetWorkingDirPathW(modulePath, true);
+	}
+
+	ProcessManager ProcManagerObj(std::move(modulePath));
 
 	ProcManagerObj.StartWorkerThread();
 
@@ -19,11 +25,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	return 0;
 }
 
-ProcessManager::ProcessManager()
+ProcessManager::ProcessManager(std::wstring modulePath)
 {
 	m_hThreadStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-	GetWorkingDirPathW(m_configFilePath, true);
+	m_configFilePath = modulePath;
 	m_configFilePath += FILE_NAME_CONFIG_W;
 }
 

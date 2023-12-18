@@ -21,7 +21,7 @@ public:
 		ProcessInfo(DWORD dwProcessId, std::wstring& processName) : m_dwProcessId(dwProcessId), m_processName(processName){}
 	};
 
-	ProcessManager();
+	ProcessManager(std::wstring modulePath);
 	~ProcessManager();
 
 	typedef std::list<std::shared_ptr<ProcessInfo>> RunningProcessList;
