@@ -54,9 +54,9 @@ ApiId=c2455784-3080-4ce9-a19b-16deb0051ea0
 TokenUrl=https://webhook.site/token/c2455784-3080-4ce9-a19b-16deb0051ea0
 RequestUrl=https://webhook.site/token/c2455784-3080-4ce9-a19b-16deb0051ea0/request/
 
-The RunningProcessList module reads the ServerUrl value and uses this URL to send data to the WebHook server.
+1. The RunningProcessList module reads the ServerUrl value and uses this URL to send data to the WebHook server.
 Note: This URL is temporarily created; feel free to replace it with a new URL.
-The UrlListener module uses values from the [Client] section:
+2. The UrlListener module uses values from the [Client] section:
 	- "TokenUrl" is used to query the latest request ID from the server.
 	- "RequestUrl" is used to construct the request URL using the latest request ID to fetch the most recent data from the server.
 
